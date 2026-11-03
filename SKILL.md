@@ -1,13 +1,16 @@
 ---
 name: boot-image-generator
-description: Turn an LG Nexus 5X into a single-purpose device — build a trimmed LineageOS 3.10 kernel plus one embedded-compose app into a RAM-booted boot image, preview it in QEMU on the selected kernel, and deliver image + video. Use when the user wants a custom Nexus 5X boot image, a minimal-kernel single-app device, or says "boot image generator" / "build the boot image".
+description: Turn a phone into a single-purpose device — build a trimmed kernel plus one embedded-compose app into a RAM-booted boot image, preview it in QEMU on the selected kernel, and deliver image + video. Supported today: LG Nexus 5X (bullhead); Pixel 4a (sunfish) planned. Use when the user wants a custom boot image, a minimal-kernel single-app device, or says "boot image generator" / "build the boot image".
 ---
 
-# Skill: Nexus 5X Forge — turn a Nexus 5X into a single-purpose device
+# Boot Image Generator — turn a phone into a single-purpose device
 
-Build a RAM-booted boot image for an LG Nexus 5X (bullhead) that runs one
+Build a RAM-booted boot image for a supported phone that runs one
 app on bare Linux — no Android — with a kernel trimmed to exactly what
-that app needs. Assembled from kaiwalyakhasnis's public projects:
+that app needs. The workflow is device-generic: each supported device
+adds a board, a kernel source and a catalog entry. Supported today:
+LG Nexus 5X (bullhead). Planned: Pixel 4a (sunfish). Assembled from
+kaiwalyakhasnis's public projects:
 embedded-compose, nexus5x-hike-buddy, nexus5x-local-llm,
 nexus5x-recovery-roadfighter, nexus5x-linux-6.12-ubuntu-26.04LTS.
 
