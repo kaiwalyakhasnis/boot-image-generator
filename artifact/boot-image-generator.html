@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Boot Image Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fafaf8; --surface:#fff; --line:#e6e4de; --text:#171816; --muted:#8a8d88;
+  --accent:#0f766e; --track:#dddcd6;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#101210; --surface:#171917; --line:#262826; --text:#f0f1ec; --muted:#8f948f; --track:#2e302e; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:620px;margin:0 auto;padding:28px 20px 40px}
+h1{font-size:24px;letter-spacing:-.02em;margin:0;font-weight:800}
+.sub{font-size:14px;color:var(--muted);margin:6px 0 0}
+.group{margin-top:28px}
+.label{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row.grid2{display:grid;grid-template-columns:1fr 1fr}
+.row.grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
+.row.grid4{display:grid;grid-template-columns:1fr 1fr}
+@media(min-width:520px){.row.grid4{grid-template-columns:repeat(4,1fr)}}
+.chip{appearance:none;border:1.5px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:11px 8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-align:center;line-height:1.2}
+.chip small{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px}
+.chip[aria-pressed="true"]{border-color:var(--text);background:var(--text);color:var(--bg)}
+.chip[aria-pressed="true"] small{color:var(--bg);opacity:.7}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.list{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.item{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer;background:none;width:100%;border-left:0;border-right:0;border-bottom:0;font-family:inherit;color:var(--text);text-align:left}
+.item:first-child{border-top:0}
+.item b{font-size:14.5px;font-weight:600}
+.toggle{width:40px;height:23px;border-radius:99px;background:var(--track);flex-shrink:0;position:relative;transition:.15s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.item[aria-pressed="true"] .toggle,.pill-toggle[aria-pressed="true"] .toggle{background:var(--accent)}
+.item[aria-pressed="true"] .toggle::after,.pill-toggle[aria-pressed="true"] .toggle::after{left:20px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.fields{grid-template-columns:1fr 1fr}}
+.field label{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+select,input[type=time],input[type=text],textarea{width:100%;padding:11px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);font-family:inherit;font-size:14.5px;font-weight:600}
+textarea{resize:vertical;min-height:76px;line-height:1.45;font-weight:500}
+textarea::placeholder{color:var(--muted);font-weight:500}
+.pill-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px;font-family:inherit;color:var(--text);cursor:pointer}
+.pill-toggle b{font-size:14px}
+.summary{margin-top:28px;font-size:13px;color:var(--muted);text-align:center;line-height:1.5;min-height:20px}
+.build{margin-top:14px;width:100%;height:54px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.01em}
+.build:active{transform:scale(.99)}
+.build:disabled{opacity:.6}
+.hint{font-size:12.5px;color:var(--muted);text-align:center;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:700;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.divider{height:1px;background:var(--line);margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Boot Image Generator</h1>
+  <p class="sub">Choose. Then Build — Muse runs it.</p>
+
+  <!-- Device -->
+  <div class="group">
+    <div class="label">Device</div>
+    <div class="row grid2" id="deviceGroup">
+      <button class="chip" data-device="bullhead" aria-pressed="true">Nexus 5X<small>bullhead</small></button>
+      <button class="chip" data-device="sunfish" aria-pressed="false" disabled>Pixel 4a<small>soon</small></button>
+    </div>
+  </div>
+
+  <!-- Preset -->
+  <div class="group">
+    <div class="label">Preset</div>
+    <div class="row grid2" id="profileGroup">
+      <button class="chip" data-profile="minimum" aria-pressed="true">Minimum</button>
+      <button class="chip" data-profile="full" aria-pressed="false">Full</button>
+    </div>
+  </div>
+
+  <!-- Kernel -->
+  <div class="group">
+    <div class="label">Kernel</div>
+    <div class="fields">
+      <div class="field">
+        <label for="version">Version</label>
+        <select id="version">
+          <option value="6.12">6.12 LTS</option>
+          <option value="3.10" selected>3.10 LineageOS</option>
+          <option value="6.6">6.6 LTS</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="base">Base</label>
+        <select id="base">
+          <option value="defconfig" selected>defconfig</option>
+          <option value="tinyconfig">tinyconfig</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hardware -->
+  <div class="group">
+    <div class="label">Hardware</div>
+    <div class="list" id="hwGroup">
+      <button class="item" data-hw="gps" aria-pressed="false"><b>GPS</b><span class="toggle"></span></button>
+      <button class="item" data-hw="wifi" aria-pressed="false"><b>Wi-Fi</b><span class="toggle"></span></button>
+      <button class="item" data-hw="bt" aria-pressed="false"><b>Bluetooth</b><span class="toggle"></span></button>
+      <button class="item" data-hw="cell" aria-pressed="false"><b>Cellular / modem</b><span class="toggle"></span></button>
+      <button class="item" data-hw="camera" aria-pressed="false"><b>Camera</b><span class="toggle"></span></button>
+      <button class="item" data-hw="nfc" aria-pressed="false"><b>NFC</b><span class="toggle"></span></button>
+      <button class="item" data-hw="gpu" aria-pressed="true"><b>Display / GPU</b><span class="toggle"></span></button>
+      <button class="item" data-hw="usb" aria-pressed="true"><b>USB</b><span class="toggle"></span></button>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="label">Sensors</div>
+    <div class="row grid3" id="sensorGroup">
+      <button class="chip" data-sensors="off" aria-pressed="false">Off</button>
+      <button class="chip" data-sensors="minimal" aria-pressed="true">Minimal</button>
+      <button class="chip" data-sensors="full" aria-pressed="false">Full</button>
+    </div>
+  </div>
+
+  <!-- CPU -->
+  <div class="group">
+    <div class="label">CPU</div>
+    <div class="fields">
+      <div class="field">
+        <label for="gov">Governor</label>
+        <select id="gov">
+          <option value="powersave" selected>powersave</option>
+          <option value="schedutil">schedutil</option>
+          <option value="ondemand">ondemand</option>
+          <option value="performance">performance</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="maxfreq">Max freq</label>
+        <select id="maxfreq">
+          <option value="384">384 MHz</option>
+          <option value="600" selected>600 MHz</option>
+          <option value="960">960 MHz</option>
+          <option value="1440">1.44 GHz</option>
+          <option value="1824">1.82 GHz</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="group">
+    <div class="label">Kernel features</div>
+    <div class="row grid3" id="featGroup" style="display:grid;grid-template-columns:1fr 1fr 1fr">
+      <button class="chip" data-feat="net" aria-pressed="false">Network</button>
+      <button class="chip" data-feat="virt" aria-pressed="false">Virt</button>
+      <button class="chip" data-feat="usb" aria-pressed="true">USB</button>
+      <button class="chip" data-feat="debug" aria-pressed="false">Debug</button>
+      <button class="chip" data-feat="sec" aria-pressed="true">Security</button>
+      <button class="chip" data-feat="perf" aria-pressed="false">Perf</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- App -->
+  <div class="group">
+    <div class="label">App</div>
+    <div class="row grid3" id="appGroup">
+      <button class="chip" data-app="clock" aria-pressed="true">Clock</button>
+      <button class="chip" data-app="none" aria-pressed="false">None</button>
+      <button class="chip" data-app="custom" aria-pressed="false">Custom</button>
+    </div>
+    <div id="customRow" style="display:none;margin-top:10px">
+      <input type="text" id="customAppName" value="my-app" aria-label="Custom app name" placeholder="App name">
+      <div class="field" style="margin-top:10px">
+        <label for="customPrompt">What do you want to build?</label>
+        <textarea id="customPrompt" rows="3" placeholder="e.g. A big compass and altitude for hiking, no network, updates once a second…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clock -->
+  <div id="clockSettings">
+    <div class="group">
+      <div class="fields">
+        <div class="field">
+          <label for="clockTime">Time</label>
+          <input type="time" id="clockTime" step="1">
+        </div>
+        <div class="field">
+          <label>Format</label>
+          <div class="row grid2" id="fmtGroup">
+            <button class="chip" data-fmt="24" aria-pressed="true">24h</button>
+            <button class="chip" data-fmt="12" aria-pressed="false">12h</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="group" style="margin-top:16px">
+      <div class="fields">
+        <div class="field">
+          <label for="alarmTime">Alarm</label>
+          <input type="time" id="alarmTime" value="07:00">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="pill-toggle" id="alarmToggle" aria-pressed="false"><b>Alarm on</b><span class="toggle"></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="group" style="margin-top:16px">
+      <div class="label">Style</div>
+      <div class="row grid3" id="styleGroup">
+        <button class="chip" data-style="flip" aria-pressed="true">Flip</button>
+        <button class="chip" data-style="digital" aria-pressed="false">Digital</button>
+        <button class="chip" data-style="analog" aria-pressed="false">Analog</button>
+      </div>
+      <div class="row grid4" id="animGroup" style="margin-top:8px">
+        <button class="chip" data-anim="flip" aria-pressed="true">Flip</button>
+        <button class="chip" data-anim="fade" aria-pressed="false">Fade</button>
+        <button class="chip" data-anim="slide" aria-pressed="false">Slide</button>
+        <button class="chip" data-anim="none" aria-pressed="false">None</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <button class="build" id="buildBtn">Build</button>
+  <p class="hint">Downloads .config · build.sh · SKILL.md · fragment · boot recipe<br>Build sends this selection to Muse to run on the VM.</p>
+</div>
+<div class="toast" id="toast">Done</div>
+
+<script>
+var state={version:'3.10',base:'defconfig',name:'nexus5x-minimum',feats:{net:false,virt:false,usb:true,debug:false,sec:true,perf:false}};
+var nx={profile:'minimum',hw:{gps:false,wifi:false,bt:false,cell:false,camera:false,nfc:false,gpu:true,usb:true},sensors:'minimal',gov:'powersave',maxfreq:'600',app:'clock',customApp:'my-app',customPrompt:'',fmt:'24',alarmOn:false,alarmTime:'07:00',clockStyle:'flip',anim:'flip'};
+
+var featConfig={
+  net:['CONFIG_NET=y','CONFIG_INET=y','CONFIG_WIRELESS=y','CONFIG_CFG80211=m','CONFIG_MAC80211=m'],
+  virt:['CONFIG_VIRTUALIZATION=y','CONFIG_KVM=m','CONFIG_NAMESPACES=y','CONFIG_CGROUPS=y'],
+  usb:['CONFIG_USB=y','CONFIG_USB_XHCI_HCD=y','CONFIG_EXT4_FS=y'],
+  debug:['CONFIG_DEBUG_INFO=y','CONFIG_FTRACE=y','CONFIG_KPROBES=y'],
+  sec:['CONFIG_SECURITY=y','CONFIG_SECURITY_SELINUX=y','CONFIG_SECCOMP=y'],
+  perf:['CONFIG_PREEMPT=y','CONFIG_HIGH_RES_TIMERS=y','CONFIG_CPU_FREQ=y']
+};
+var featNames={net:'Networking',virt:'Virtualization',usb:'USB & Storage',debug:'Debug',sec:'Security',perf:'Performance'};
+
+function slug(){return 'nexus5x-'+(nx.profile||'custom')}
+function enabledFeats(){return Object.keys(state.feats).filter(function(k){return state.feats[k]})}
+
+function genConfig(){
+  var L=[];
+  L.push('# Linux arm64 '+state.version+' — '+slug());
+  L.push('# Base: '+state.base);
+  L.push('CONFIG_LOCALVERSION="-'+slug()+'"');
+  L.push('CONFIG_ARM64=y','CONFIG_MODULES=y','CONFIG_SMP=y');
+  enabledFeats().forEach(function(k){L.push('');L.push('# '+featNames[k]);featConfig[k].forEach(function(l){L.push(l)})});
+  L.push('');L.push('# --- bullhead fragment ---');
+  L.push('CONFIG_ARCH_QCOM=y','CONFIG_ARCH_MSM8992=y');
+  L.push(nx.hw.gps?'CONFIG_GNSS=y':'# CONFIG_GNSS is not set');
+  L.push(nx.hw.wifi?'CONFIG_WLAN=y':'# CONFIG_WLAN is not set');
+  L.push(nx.hw.bt?'CONFIG_BT=y':'# CONFIG_BT is not set');
+  L.push(nx.hw.cell?'CONFIG_QCOM_MODEM=y':'# CONFIG_QCOM_MODEM is not set');
+  L.push(nx.hw.camera?'CONFIG_MEDIA_SUPPORT=y':'# CONFIG_MEDIA_SUPPORT is not set');
+  L.push(nx.hw.nfc?'CONFIG_NFC=y':'# CONFIG_NFC is not set');
+  L.push(nx.hw.gpu?'CONFIG_DRM=y':'# CONFIG_DRM is not set');
+  L.push(nx.hw.usb?'CONFIG_USB_GADGET=y':'# CONFIG_USB_GADGET is not set');
+  if(nx.sensors==='full')L.push('CONFIG_IIO=y');
+  if(nx.sensors==='minimal')L.push('CONFIG_IIO=y # minimal');
+  if(nx.sensors==='off')L.push('# CONFIG_IIO is not set');
+  L.push('CONFIG_CPU_FREQ=y','CONFIG_CPU_FREQ_DEFAULT_GOV_'+nx.gov.toUpperCase()+'=y');
+  L.push('# Max '+nx.maxfreq+' MHz');
+  if(nx.app==='clock')L.push('# App: clock '+nx.clockStyle+'/'+nx.anim+' alarm '+(nx.alarmOn?nx.alarmTime:'off'));
+  if(nx.app==='custom'){L.push('# App: '+nx.customApp);if(nx.customPrompt)L.push('# Prompt: '+nx.customPrompt.replace(/\n/g,' '))}
+  return L.join('\n');
+}
+function genScript(){
+  var s='#!/usr/bin/env bash\n# '+slug()+' — kernel '+state.version+' arm64\nset -euo pipefail\n# What Build means: Muse runs this on the VM —\n# 1. compile kernel + app\n# 2. pack boot.img (mkbootimg)\n# 3. run the image in QEMU\n# 4. record a preview video of the run\n# 5. report back with the boot image and the video\nsudo apt update && sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev dwarves gcc-aarch64-linux-gnu\nwget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-'+state.version+'.tar.xz\ntar xf linux-'+state.version+'.tar.xz && cd linux-'+state.version+'\nmake ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- '+state.base+'\nmake ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig\nmake ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)\n# governor '+nx.gov+' max '+(parseInt(nx.maxfreq,10)*1000)+'\n# app: '+(nx.app==='custom'?nx.customApp:nx.app);
+  if(nx.app==='custom'&&nx.customPrompt)s+='\n# prompt: '+nx.customPrompt.replace(/\n/g,' ');
+  s+='\necho "Done: arch/arm64/boot/Image"';
+  return s;
+}
+function genSkill(){
+  var s='---\nname: '+slug()+'\ndescription: Nexus 5X kernel '+state.version+' build.\n---\n\n# '+slug()+'\n\nDevice: Nexus 5X (bullhead)\nKernel: '+state.version+' / '+state.base+'\nHardware on: '+Object.keys(nx.hw).filter(function(k){return nx.hw[k]}).join(', ')+'\nSensors: '+nx.sensors+'\nCPU: '+nx.gov+' @ '+nx.maxfreq+' MHz\nApp: '+(nx.app==='custom'?nx.customApp:nx.app);
+  if(nx.app==='custom'&&nx.customPrompt)s+='\n\n## App prompt\n\n'+nx.customPrompt+'\n\nBuild the app above as an embedded-compose project for this device and kernel.';
+  s+='\n\n## What Build means\n\nWhen the user says Build, Muse runs the build — it does not just hand back a recipe:\n\n1. Compile the kernel and app on Muse\'s VM from the settings in this file.\n2. Pack the result into a boot image.\n3. Boot the image in QEMU.\n4. Record a preview video of the QEMU run showing how it looks.\n5. Deliver the boot image and the preview video to the user.\n\nA build that only downloads a recipe file is not complete.';
+  s+='\n\nBuild with build.sh, pack with mkbootimg, test with fastboot boot boot.img.';
+  return s;
+}
+function genBoot(){
+  return '# Muse runs the build on the VM, boots it in QEMU and records a preview video — you get boot.img + the video back.\n# bullhead boot recipe — '+slug()+'\nmkbootimg --kernel arch/arm64/boot/Image.gz-dtb --ramdisk ramdisk.img --cmdline "console=ttyHSL0,115200,n8 androidboot.hardware=bullhead" --base 0x10000000 --pagesize 2048 --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 -o boot.img\n\nqemu-system-aarch64 -machine virt -cpu cortex-a57 -m 1024 -kernel arch/arm64/boot/Image -nographic -append "console=ttyAMA0"\n\nadb reboot bootloader\nfastboot boot boot.img';
+}
+function genFragment(){
+  var p=genConfig().split('# --- bullhead fragment ---')[1]||'';
+  return '# bullhead fragment\n'+p;
+}
+
+function setPressed(id,attr,val){
+  document.querySelectorAll('#'+id+' [data-'+attr+']').forEach(function(x){x.setAttribute('aria-pressed',x.dataset[attr]===String(val)?'true':'false')});
+}
+function sync(){
+  document.querySelectorAll('#hwGroup [data-hw]').forEach(function(b){b.setAttribute('aria-pressed',nx.hw[b.dataset.hw]?'true':'false')});
+  document.querySelectorAll('#featGroup [data-feat]').forEach(function(b){b.setAttribute('aria-pressed',state.feats[b.dataset.feat]?'true':'false')});
+  setPressed('sensorGroup','sensors',nx.sensors);
+  setPressed('appGroup','app',nx.app);
+  setPressed('fmtGroup','fmt',nx.fmt);
+  setPressed('styleGroup','style',nx.clockStyle);
+  setPressed('animGroup','anim',nx.anim);
+  if(nx.profile) setPressed('profileGroup','profile',nx.profile);
+  document.getElementById('gov').value=nx.gov;
+  document.getElementById('maxfreq').value=nx.maxfreq;
+  document.getElementById('clockSettings').style.display=nx.app==='clock'?'':'none';
+  document.getElementById('customRow').style.display=nx.app==='custom'?'':'none';
+  document.getElementById('alarmToggle').setAttribute('aria-pressed',nx.alarmOn?'true':'false');
+  var on=Object.keys(nx.hw).filter(function(k){return nx.hw[k]}).length;
+  var appTxt=nx.app==='clock'?'Clock':nx.app==='custom'?nx.customApp:'No app';
+  document.getElementById('summary').textContent=appTxt+' · '+on+'/8 hardware on · '+nx.gov+' @ '+nx.maxfreq+' MHz · sensors '+nx.sensors;
+}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2200)}
+function download(name,text){
+  var b=new Blob([text],{type:'text/plain'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);
+}
+
+var profiles={
+  minimum:{feats:{net:false,virt:false,usb:true,debug:false,sec:true,perf:false},hw:{gps:false,wifi:false,bt:false,cell:false,camera:false,nfc:false,gpu:true,usb:true},sensors:'minimal',gov:'powersave',maxfreq:'600',app:'clock'},
+  full:{feats:{net:true,virt:true,usb:true,debug:true,sec:true,perf:true},hw:{gps:true,wifi:true,bt:true,cell:true,camera:true,nfc:true,gpu:true,usb:true},sensors:'full',gov:'schedutil',maxfreq:'1824',app:'clock'}
+};
+function applyProfile(k){
+  var p=profiles[k];if(!p)return;
+  nx.profile=k;
+  Object.keys(p.feats).forEach(function(x){state.feats[x]=p.feats[x]});
+  Object.keys(p.hw).forEach(function(x){nx.hw[x]=p.hw[x]});
+  nx.sensors=p.sensors;nx.gov=p.gov;nx.maxfreq=p.maxfreq;nx.app=p.app;
+  if(p.customApp){nx.customApp=p.customApp;document.getElementById('customAppName').value=p.customApp}
+  sync();
+}
+
+document.getElementById('profileGroup').addEventListener('click',function(e){var b=e.target.closest('[data-profile]');if(b)applyProfile(b.dataset.profile)});
+document.getElementById('hwGroup').addEventListener('click',function(e){var b=e.target.closest('[data-hw]');if(!b)return;nx.hw[b.dataset.hw]=!nx.hw[b.dataset.hw];nx.profile=null;document.querySelectorAll('#profileGroup .chip').forEach(function(c){c.setAttribute('aria-pressed','false')});sync()});
+document.getElementById('featGroup').addEventListener('click',function(e){var b=e.target.closest('[data-feat]');if(!b)return;state.feats[b.dataset.feat]=!state.feats[b.dataset.feat];sync()});
+document.getElementById('sensorGroup').addEventListener('click',function(e){var b=e.target.closest('[data-sensors]');if(b){nx.sensors=b.dataset.sensors;sync()}});
+document.getElementById('appGroup').addEventListener('click',function(e){var b=e.target.closest('[data-app]');if(b){nx.app=b.dataset.app;sync()}});
+document.getElementById('fmtGroup').addEventListener('click',function(e){var b=e.target.closest('[data-fmt]');if(b){nx.fmt=b.dataset.fmt;sync()}});
+document.getElementById('styleGroup').addEventListener('click',function(e){var b=e.target.closest('[data-style]');if(b){nx.clockStyle=b.dataset.style;sync()}});
+document.getElementById('animGroup').addEventListener('click',function(e){var b=e.target.closest('[data-anim]');if(b){nx.anim=b.dataset.anim;sync()}});
+document.getElementById('version').addEventListener('change',function(){state.version=this.value;sync()});
+document.getElementById('base').addEventListener('change',function(){state.base=this.value});
+document.getElementById('gov').addEventListener('change',function(){nx.gov=this.value;sync()});
+document.getElementById('maxfreq').addEventListener('change',function(){nx.maxfreq=this.value;sync()});
+document.getElementById('alarmTime').addEventListener('change',function(){nx.alarmTime=this.value||'07:00'});
+document.getElementById('alarmToggle').addEventListener('click',function(){nx.alarmOn=!nx.alarmOn;sync();toast(nx.alarmOn?'Alarm '+nx.alarmTime:'Alarm off')});
+document.getElementById('customAppName').addEventListener('input',function(){nx.customApp=this.value||'my-app';sync()});
+document.getElementById('customPrompt').addEventListener('input',function(){nx.customPrompt=this.value});
+
+document.getElementById('buildBtn').addEventListener('click',function(){
+  var btn=this;btn.disabled=true;btn.textContent='Requesting…';
+  download(slug()+'.config',genConfig());
+  setTimeout(function(){download('build.sh',genScript())},300);
+  setTimeout(function(){download('SKILL.md',genSkill())},600);
+  setTimeout(function(){download('bullhead.fragment',genFragment())},900);
+  setTimeout(function(){
+    download('bullhead-boot-recipe.txt',genBoot());
+    btn.disabled=false;btn.textContent='Build';
+    toast('Build requested — Muse runs it on the VM');
+  },1200);
+});
+
+(function(){
+  var now=new Date();function p(n){return (n<10?'0':'')+n}
+  document.getElementById('clockTime').value=p(now.getHours())+':'+p(now.getMinutes())+':'+p(now.getSeconds());
+  sync();
+})();
+</script>
+</body>
+</html>
