@@ -67,21 +67,23 @@ free-text custom-app prompt, one Build button at the end). The page
 cannot build anything itself — it composes the user's choices into a
 downloadable request package. This skill is the engine behind it.
 
-**Whenever this skill is invoked, before collecting inputs in chat:**
+**On trigger — before anything else, before collecting inputs in chat:**
 
-1. Open the configurator for the user. If an artifact built from this
-   page already exists in their Muse, present that one; otherwise
-   create a web artifact from `artifact/boot-image-generator.html` and
-   present it.
-2. Prompt them to configure there (preset / kernel / app, or their own
-   app idea in the free-text box) and press **Build**; the page
-   downloads their request package (and shows what to say next).
+1. Build the page: create a web artifact in the user's own Muse from
+   `artifact/boot-image-generator.html` (the Boot Image Generator
+   configurator). If an artifact built from this exact page already
+   exists in their Muse, open that one instead of creating a duplicate.
+2. Open/present it immediately and prompt the user to configure there
+   (preset / kernel / app, or their own app idea in the free-text box)
+   and press **Build** — build generation is triggered from the page,
+   not from chat questions. The page downloads their request package
+   (and shows what to say next).
 3. When the user drops that package back into the chat, read it as the
    Inputs above and execute the build exactly as "What Build means"
    requires.
-4. Skip the page only if the user explicitly declines it, or arrived
-   with a request package or a complete spec already. Even then, mention
-   the page exists for next time — never skip it silently.
+4. Skip creating/opening the page only when the user arrived with a
+   request package already, or explicitly says not to use the page.
+   Never silently start in chat instead.
 
 ## Build environment (Muse VM) — read before building
 
