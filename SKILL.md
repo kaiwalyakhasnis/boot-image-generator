@@ -56,7 +56,7 @@ the agent MUST execute the build itself, on its own VM, end to end:
    a kernel that will not compile), report that stage plainly instead of
    handing back a recipe and calling it a build.
 
-## Front-end artifact (the configurator page)
+## Front-end artifact (the configurator page) — start here, every time
 
 `artifact/boot-image-generator.html` in this repo is the visual front-end:
 one self-contained static page (preset / kernel / app choices and a
@@ -64,17 +64,21 @@ free-text custom-app prompt, one Build button at the end). The page
 cannot build anything itself — it composes the user's choices into a
 downloadable request package. This skill is the engine behind it.
 
-When the user asks to "open the Boot Image Generator", or wants to
-configure visually:
+**Whenever this skill is invoked, before collecting inputs in chat:**
 
-1. Create a web artifact in the user's own Muse from
-   `artifact/boot-image-generator.html` and present it to them.
-2. The user configures on the page and presses Build; the page downloads
-   their request package (and shows what to say next).
-3. The user drops that package back into the chat. Read it as the Inputs
-   above and execute the build exactly as "What Build means" requires.
-4. Skipping the page is equally valid: if the user just describes what
-   they want in chat, take the Inputs from the conversation and build.
+1. Open the configurator for the user. If an artifact built from this
+   page already exists in their Muse, present that one; otherwise
+   create a web artifact from `artifact/boot-image-generator.html` and
+   present it.
+2. Prompt them to configure there (preset / kernel / app, or their own
+   app idea in the free-text box) and press **Build**; the page
+   downloads their request package (and shows what to say next).
+3. When the user drops that package back into the chat, read it as the
+   Inputs above and execute the build exactly as "What Build means"
+   requires.
+4. Skip the page only if the user explicitly declines it, or arrived
+   with a request package or a complete spec already. Even then, mention
+   the page exists for next time — never skip it silently.
 
 ## Build environment (Muse VM) — read before building
 
